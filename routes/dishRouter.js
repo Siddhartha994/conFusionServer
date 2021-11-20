@@ -19,7 +19,7 @@ dishRouter.route('/')
     .catch((err) => next(err));
 })
 .post((req, res, next) => {
-    Dishes.create(req.body)
+    Dishes.create(req.body) // req.body made available via body-parser
     .then((dish) => {
         console.log('Dish Created ', dish);
         res.statusCode = 200;
@@ -46,7 +46,7 @@ dishRouter.route('/')
 
 dishRouter.route('/:dishId')
 .get((req,res,next) => {
-    Dishes.findById(req.params.dishId)
+    Dishes.findById(req.params.dishId)  // Query 
     .then((dish) => {
         res.statusCode = 200;
         res.setHeader('Content-Type', 'application/json');
