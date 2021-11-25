@@ -30,35 +30,52 @@ app.set('view engine', 'jade');
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
+app.use(cookieParser('12345-67890-09876-54321'));
 
 function auth(req, res, next) {
-  console.log(req.headers);
-
-  var authHeader = req.headers.authorization;
-
-  if(!authHeader){
-    var err =  new Error('You are not authenticate!');
-
-    res.setHeader('WWW-Authenticate', 'Basic');
-    err.status = 401;
-    return next(err);
+  console.log(req.signedCookies);
+  if(!req.signedCookies.user){  // if user details not available
+      
+    var authHeader = req.headers.authorization;
+  
+    if(!authHeader){  // reject, if auth header not availabe
+      var err =  new Error('You are not authenticated!');
+  
+      res.setHeader('WWW-Authenticate', 'Basic');
+      err.status = 401;
+      return next(err);
+    }
+  
+    var auth = new Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':');
+  
+    var username = auth[0];
+    var password = auth[1];
+  
+    if(username === 'admin' && password === 'password'){  
+      // handling when cookie.user DNE
+      
+      res.cookie('user', 'admin', {signed: true})     // setting up cookie to be sent as response,DNE previously
+      next();
+    }
+    else{
+      var err =  new Error('You are not authenticate!');
+  
+      res.setHeader('WWW-Authenticate', 'Basic');
+      err.status = 401;
+      return next(err);
+    }
   }
+  
+  else{                //user property defined
+    if(req.signedCookies.user === 'admin'){
+      next();  //allow request to pass through
+    }
+    else{
+      var err =  new Error('You are not authenticate!');
 
-  var auth = new Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':');
-
-  var username = auth[0];
-  var password = auth[1];
-
-  if(username === 'admin' && password === 'password'){
-    next();
-  }
-  else{
-    var err =  new Error('You are not authenticate!');
-
-    res.setHeader('WWW-Authenticate', 'Basic');
-    err.status = 401;
-    return next(err);
+      err.status = 401;
+      return next(err);
+    }
   }
 }
 
