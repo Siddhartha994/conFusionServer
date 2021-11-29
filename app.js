@@ -1,121 +1,91 @@
-  var createError = require('http-errors');
-  var express = require('express');
-  var path = require('path');
-  var cookieParser = require('cookie-parser');
-  var logger = require('morgan');
-  var session = require('express-session');
-  var FileStore = require('session-file-store')(session);// takes session as parameter
+var createError = require('http-errors');
+var express = require('express');
+var path = require('path');
+// var cookieParser = require('cookie-parser');
+var logger = require('morgan');
+var session = require('express-session');
+var FileStore = require('session-file-store')(session);// takes session as parameter
 
+var indexRouter = require('./routes/index');
+var usersRouter = require('./routes/users');
+var dishRouter = require('./routes/dishRouter');
+var promoRouter = require('./routes/promoRouter');
+var leaderRouter = require('./routes/leaderRouter');
 
-  var indexRouter = require('./routes/index');
-  var usersRouter = require('./routes/users');
-  var dishRouter = require('./routes/dishRouter');
-  var promoRouter = require('./routes/promoRouter');
-  var leaderRouter = require('./routes/leaderRouter');
+// connecting to database server 
+const mongoose = require('mongoose');
 
-  // connecting to database server 
+const Dishes = require('./models/dishes');
 
-  const mongoose = require('mongoose');
+const url = 'mongodb://localhost:27017/conFusion';
+const connect = mongoose.connect(url);
+connect.then((db) => {
+	console.log("Connected correctly to server");
+}, (err) => { console.log(err); });
 
-  const Dishes = require('./models/dishes');
+var app = express();
 
-  const url = 'mongodb://localhost:27017/conFusion';
-  const connect = mongoose.connect(url);
+// view engine setup
+app.set('views', path.join(__dirname, 'views'));
+app.set('view engine', 'jade');
 
-  connect.then((db) => {
-      console.log("Connected correctly to server");
-  }, (err) => { console.log(err); });
+app.use(logger('dev'));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+// app.use(cookieParser('12345-67890-09876-54321'));
+app.use(session({
+	name: 'session-id',
+	secret: '12345-67890-09876-54321',
+	saveUninitialized: 'false', 	//if false at the end of the request(still empty), prevent a lot of empty session objects being stored in the session store
+	resave: false,
+	store: new FileStore()
+}));
 
-  var app = express();
+app.use('/', indexRouter);
+app.use('/users', usersRouter);
 
-  // view engine setup
-  app.set('views', path.join(__dirname, 'views'));
-  app.set('view engine', 'jade');
+function auth (req, res, next) {
+console.log(req.session);
 
-  app.use(logger('dev'));
-  app.use(express.json());
-  app.use(express.urlencoded({ extended: false }));
-  // app.use(cookieParser('12345-67890-09876-54321'));
-  app.use(session({
-    name: 'session-id',
-    secret: '12345-67890-09876-54321',
-    saveUninitialized: 'false', 
-    resave: false,
-    store: new FileStore()
-  }));
+	if(!req.session.user) {
+		var err = new Error('You are not authenticated!');
+		err.status = 403;
+		return next(err);
+	}
+	else {
+		if (req.session.user === 'authenticated') {
+		next();
+		}
+		else {
+		var err = new Error('You are not authenticated!');
+		err.status = 403;
+		return next(err);
+		}
+	}
+	}
 
-  // Authorization using cookie
+app.use(auth);
 
-  function auth(req, res, next) {
-    console.log(req.session);
-    if(!req.session.user){  // if user details not available
-        
-      var authHeader = req.headers.authorization;
-    
-      if(!authHeader){  // reject, if auth header not availabe
-        var err =  new Error('You are not authenticated!');
-    
-        res.setHeader('WWW-Authenticate', 'Basic');
-        err.status = 401;
-        return next(err);
-      }
-      // extract login info from base64 encryption
-      var auth = new Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':');
-    
-      var username = auth[0];
-      var password = auth[1];
-    
-      if(username === 'admin' && password === 'password'){  
-        // handling when cookie.user DNE
-        req.session.user = 'admin';
-        next();
-      }
-      else{
-        var err =  new Error('You are not authenticated!');
-    
-        res.setHeader('WWW-Authenticate', 'Basic');
-        err.status = 401;
-        return next(err);
-      }
-    }
-    
-    else{                //user property defined
-      if(req.session.user === 'admin'){
-        next();  //allow request to pass through
-      }
-      else{
-        var err =  new Error('You are not authenticated!');
+app.use(express.static(path.join(__dirname, 'public')));// helps to serve static data from public data
 
-        err.status = 401;
-        return next(err);
-      }
-    }
-  }
+app.use('/dishes',dishRouter);
+app.use('/promotions',promoRouter);
+app.use('/leaders',leaderRouter);
 
-  app.use(auth);
+// catch 404 and forward to error handler
+app.use(function(req, res, next) {
+	next(createError(404));
+});
 
-  app.use(express.static(path.join(__dirname, 'public')));// helps to serve static data from public data
+// error handler
+app.use(function(err, req, res, next) {
+	// set locals, only providing error in development
+	res.locals.message = err.message;
+	res.locals.error = req.app.get('env') === 'development' ? err : {};
 
-  app.use('/', indexRouter);
-  app.use('/users', usersRouter);
-  app.use('/dishes',dishRouter);
-  app.use('/promotions',promoRouter);
-  app.use('/leaders',leaderRouter);
+	// render the error page
+	res.status(err.status || 500);
+	res.render('error');
+});
 
-  // catch 404 and forward to error handler
-  app.use(function(req, res, next) {
-    next(createError(404));
-  });
-
-  // error handler
-  app.use(function(err, req, res, next) {
-    // set locals, only providing error in development
-    res.locals.message = err.message;
-    res.locals.error = req.app.get('env') === 'development' ? err : {};
-
-    // render the error page
-    res.status(err.status || 500);
-    res.render('error');
-  });
-
-  module.exports = app;
+module.exports = app;
