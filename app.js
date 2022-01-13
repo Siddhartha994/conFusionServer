@@ -7,6 +7,7 @@ var session = require('express-session');
 var FileStore = require('session-file-store')(session);// takes session as parameter
 var passport = require('passport');
 var authenticate = require('./authenticate');
+var config = require('./config');
 
 //Router
 var indexRouter = require('./routes/index');
@@ -20,7 +21,7 @@ const mongoose = require('mongoose');
 
 const Dishes = require('./models/dishes');
 
-const url = 'mongodb://localhost:27017/conFusion';
+const url = config.mongoUrl;
 const connect = mongoose.connect(url);
 connect.then((db) => {
 	console.log("Connected correctly to server");
@@ -36,34 +37,14 @@ app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 // app.use(cookieParser('12345-67890-09876-54321'));
-app.use(session({
-	name: 'session-id',
-	secret: '12345-67890-09876-54321',
-	saveUninitialized: 'false', 	//if false at the end of the request(still empty), prevent a lot of empty session objects being stored in the session store
-	resave: false,
-	store: new FileStore()
-}));
+
 app.use(passport.initialize());// serialize User
-app.use(passport.session());// stores in the session
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 
-function auth (req, res, next) {
-console.log(req.session);
-	if(!req.user) {
-		var err = new Error('You are not authenticated!');
-		err.status = 403;
-		return next(err);
-	}
-	else {
-		next();
-	}
-	}
-
-app.use(auth);
-
 app.use(express.static(path.join(__dirname, 'public')));// helps to serve static data from public data
+
 
 app.use('/dishes',dishRouter);
 app.use('/promotions',promoRouter);
