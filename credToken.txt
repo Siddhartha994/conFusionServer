@@ -1,0 +1,16 @@
+{"username":"admin", "password":"password", "firstname":"Siddhartha", "lastname": "Rana"}
+    eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MWUzZTliNDEyYjA1MDdiYjgwYWU5NWUiLCJpYXQiOjE2NDIzMzE5MDUsImV4cCI6MTY0MjMzNTUwNX0.iOJobMsCWOZraLUKoJYO4cL0Yuq0_1fvzACnylcbvyo
+
+{"username":"visque", "password": "23456", "firstname":"vishnu", "lastname": "panicker"  }
+    token: bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MWUzZWE4YjEyYjA1MDdiYjgwYWU5NWYiLCJpYXQiOjE2NDIzMjY2NzgsImV4cCI6MTY0MjMzMDI3OH0.TF_x6n4rdTbbrjI_jzcJNZxLmjOGtvn0NF8J20fpcKE
+
+{"username":"enderchan", "password": "34567", "firstname":"vansh", "lastname": "mithal"  }
+    token: bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MWUzZWFlMzEyYjA1MDdiYjgwYWU5NjAiLCJpYXQiOjE2NDIzMjY3NzAsImV4cCI6MTY0MjMzMDM3MH0.5gxTD1LGrTXQNjiSmijUvmpXHKAol4-1tx1P56cEBTo
+
+run mongo server
+mongod --dbpath=data --bind_ip 127.0.0.1
+endpoints:
+POST /users/login,  /users/signup  , add credentials in body
+GET(Admin only) /users 
+POST /users(admin) list of users
+

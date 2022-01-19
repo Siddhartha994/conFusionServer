@@ -35,3 +35,12 @@ exports.jwtPassport = passport.use(new JwtStrategy(opts,
         });
     }));
 exports.verifyUser = passport.authenticate('jwt',{session: false});//authenticates incoming req// Uses token to authenticate
+exports.verifyAdmin = (req,res,next)=>{
+    if(req.user.admin)
+        next();
+    else {
+        var err = new Error("You are not authorized to perform this operation!");
+        err.status = 403;
+        return next(err);
+    }
+}//This function will check an ordinary user to see if s/he has Admin privileges.
