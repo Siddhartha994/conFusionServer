@@ -228,6 +228,12 @@ dishRouter.route('/:dishId/comments/:commentId')
     Dishes.findById(req.params.dishId)
     .then((dish) => {
         if (dish != null && dish.comments.id(req.params.commentId) != null) {
+            if (dish.comments.id(req.params.commentId).author.toString() != req.user._id.toString()) {
+                console.log(req.user._id.toString()+'hello world'+dish.comments.id(req.params.commentId).author.toString());
+                err = new Error('You are not authorized to edit this comment');
+                err.status = 403;
+                return next(err);
+            }
             dish.comments.id(req.params.commentId).remove();
             dish.save()
             .then((dish) => {
