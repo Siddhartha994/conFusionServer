@@ -33,10 +33,14 @@ favoriteRouter.route('/')
             }
             favorite.save()
             .then((favorite) => {
-                console.log('Favorite Created ', favorite);
-                res.statusCode = 200;
-                res.setHeader('Content-Type', 'application/json');
-                res.json(favorite);
+                Favorites.findById(favorite._id)
+                .populate('userinfo')
+                .populate('dishDetails')
+                .then((favorite) => {
+                    res.statusCode = 200;
+                    res.setHeader('Content-Type', 'application/json');
+                    res.json(favorite);
+                })
             }, (err) => next(err));
         }
         else {
